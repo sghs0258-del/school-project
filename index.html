@@ -1,0 +1,477 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>회양목 홈런더비</title>
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+:root{
+--bg:#e5ebe2;--ink:#1c2e22;--line:#a9bcab;--ok:#3f8f5d;
+}
+*{box-sizing:border-box}
+body{
+margin:0;background:var(--bg);color:var(--ink);
+font-family:"Jua","Malgun Gothic",sans-serif;
+}
+main{max-width:440px;margin:auto;padding:14px}
+h1{font-size:1.5rem;font-weight:400;margin:5px 0 12px}
+h2{font-weight:400}
+.hud{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:1.05rem;margin-bottom:8px}
+#wrap{position:relative}
+canvas{
+display:block;width:100%;height:auto;border-radius:14px;
+border:2px solid var(--line);touch-action:manipulation;
+cursor:pointer;background:#2f7a43
+}
+#ov{
+position:absolute;inset:0;
+background:rgba(229,235,226,.94);
+border-radius:14px;display:flex;flex-direction:column;
+justify-content:center;align-items:flex-start;gap:10px;padding:20px
+}
+#ov[hidden]{display:none}
+#ov h2{margin:0;font-size:1.5rem}
+#ov p{margin:0;line-height:1.55;font-size:.95rem;font-family:sans-serif}
+.intro{color:var(--ok);font-size:1.65rem!important;line-height:1.4}
+.btn{
+font:inherit;font-size:1.1rem;background:var(--ok);color:white;
+border:0;border-radius:12px;padding:11px 18px;cursor:pointer
+}
+.btn:active{transform:scale(.97)}
+#ov input{
+width:100%;padding:12px;border:1px solid var(--line);
+border-radius:10px;font:inherit;font-size:1rem
+}
+.tabs{display:flex;gap:6px;margin:12px 0}
+.tab{
+flex:1;padding:11px 3px;border:1px solid var(--line);
+border-radius:10px;background:transparent;color:var(--ink);
+font:inherit;font-size:1rem;cursor:pointer
+}
+.tab.active{background:var(--ok);color:white;border-color:var(--ok)}
+.panel{
+border:1px solid var(--line);border-radius:14px;
+padding:14px;margin-bottom:12px
+}
+.panel[hidden],#gamePanel[hidden]{display:none}
+.rank-row{
+display:flex;justify-content:space-between;align-items:center;
+padding:12px 5px;border-bottom:1px solid var(--line);gap:7px
+}
+.rank-row:last-child{border:0}
+.rank-num{width:32px;color:var(--ok);font-size:1.15rem}
+.rank-name{flex:1;overflow:hidden;text-overflow:ellipsis}
+.rank-score{font-size:1.1rem}
+.news-item{padding:14px 0;border-bottom:1px solid var(--line)}
+.news-item:last-child{border:0}
+.news-item h3{font-size:1.08rem;font-weight:400;margin:0 0 8px}
+.news-item p{font-family:sans-serif;font-size:.9rem;line-height:1.65;margin:0 0 8px}
+.news-item a{color:var(--ok);font-size:.9rem}
+.small{font-size:.8rem;color:gray}
+.news-label{
+display:inline-block;background:#d7e8d9;color:#24653d;
+padding:4px 9px;border-radius:20px;font-size:.8rem;margin-bottom:7px
+}
+</style>
+</head>
+<body>
+<main>
+<h1>🌳 회양목 홈런더비</h1>
+
+<div class="hud">
+<span id="sc"></span>
+<span id="ot"></span>
+</div>
+
+<div class="tabs">
+<button class="tab active" data-tab="game">⚾ 게임</button>
+<button class="tab" data-tab="rank">🏆 랭킹</button>
+<button class="tab" data-tab="news">📰 관련뉴스</button>
+</div>
+
+<section id="gamePanel">
+<div id="wrap">
+<canvas id="cv" width="360" height="480" aria-label="화면을 누르거나 스페이스바로 스윙"></canvas>
+<div id="ov">
+<h2 class="intro">회양목을 위해!<br>회양목명나방을 날려버려요!</h2>
+<h2>3아웃 전에 최대한 점수를 내요!</h2>
+<p>
+회양목명나방이 노란 존에 닿는 순간 화면을 누르거나 스페이스바로 스윙하세요.<br>
+홈런은 매우 정확해야 나옵니다! 타이밍이 어긋나면 아웃될 수 있어요.<br>
+스트라이크 3개면 삼진이고, 3아웃이면 게임이 끝나요.
+</p>
+<button class="btn" id="go">타석에 들어서기</button>
+</div>
+</div>
+</section>
+
+<section id="rankPanel" class="panel" hidden>
+<h2>🏆 명예의 전당 TOP 10</h2>
+<p class="small">이 기기에 저장된 최고 기록입니다.</p>
+<div id="rankList"></div>
+<button class="btn" onclick="renderRanking()">새로고침</button>
+</section>
+
+<section id="newsPanel" class="panel" hidden>
+<h2>📰 회양목 지키기 뉴스</h2>
+<p class="small">회양목과 회양목명나방에 관한 이야기</p>
+
+<article class="news-item">
+<span class="news-label">천적 소식</span>
+<h3>🐝 한국에서 온 작은 벌, 유럽 회양목을 구할까?</h3>
+<p>
+한국에서 유래한 맵시벌이 유럽의 회양목명나방에 기생하는 현상이 확인되면서 천적을 활용한 자연적인 해충 억제 가능성이 주목받고 있습니다.
+</p>
+<p class="small">연합뉴스 · 2025년 11월 관련 보도</p>
+<a href="https://www.yna.co.kr/" target="_blank" rel="noopener">연합뉴스 바로가기 →</a>
+</article>
+
+<article class="news-item">
+<span class="news-label">해충 정보</span>
+<h3>🦋 회양목명나방은 어떻게 나무를 공격할까?</h3>
+<p>
+회양목명나방 애벌레는 회양목의 잎을 갉아 먹고 거미줄 같은 실을 만들어 피해를 줍니다. 잎이 마르고 가지가 앙상해지는 피해가 발생할 수 있습니다.
+</p>
+<p class="small">회양목 관리 정보</p>
+<a href="https://www.forest.go.kr/" target="_blank" rel="noopener">산림청 바로가기 →</a>
+</article>
+
+<article class="news-item">
+<span class="news-label">환경 보호</span>
+<h3>🌳 회양목을 지키는 친환경적인 방법</h3>
+<p>
+회양목의 잎과 가지를 자주 관찰하고 애벌레가 발견되면 초기에 제거하는 것이 좋습니다. 천적 생물을 보호하고 적절한 관리 방법을 함께 활용하는 것이 중요합니다.
+</p>
+<p class="small">산림 보호 정보</p>
+<a href="https://www.forest.go.kr/" target="_blank" rel="noopener">산림청 자료 확인 →</a>
+</article>
+
+<article class="news-item">
+<span class="news-label">생태 이야기</span>
+<h3>🐞 자연의 균형을 지키는 곤충들</h3>
+<p>
+기생벌과 포식성 곤충은 여러 해충의 개체 수를 조절하는 데 도움을 줍니다. 생태계의 균형을 지키는 것이 식물을 보호하는 중요한 방법입니다.
+</p>
+<p class="small">생태계 보호 이야기</p>
+<a href="https://www.nie.re.kr/" target="_blank" rel="noopener">국립생태원 바로가기 →</a>
+</article>
+</section>
+
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('cv'),x=cv.getContext('2d'),W=360,ZY=392;
+
+const TY=[
+{n:'직구',d:900},
+{n:'슬라이더',d:1050,w:30,f:2},
+{n:'커브',d:1250,w:70,f:3},
+{n:'체인지업',d:1500},
+{n:'포크볼',d:1000,fk:1},
+{n:'너클볼',d:1350,kn:1}
+];
+
+let on=false,outs,runs,hrs,st,bs,p,fly,msg,bat=-1;
+const now=()=>performance.now();
+
+// 탭
+document.querySelectorAll('.tab').forEach(btn=>{
+btn.addEventListener('click',()=>{
+document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+btn.classList.add('active');
+const tab=btn.dataset.tab;
+$('gamePanel').hidden=tab!=='game';
+$('rankPanel').hidden=tab!=='rank';
+$('newsPanel').hidden=tab!=='news';
+if(tab==='rank')renderRanking();
+});
+});
+
+// 랭킹
+function getRanking(){
+try{
+return JSON.parse(localStorage.getItem('boxwoodRanking')||'[]');
+}catch(e){return []}
+}
+
+function saveRanking(name,score,homeRuns){
+const list=getRanking();
+list.push({
+name,score,homeRuns,
+date:new Date().toLocaleDateString('ko-KR')
+});
+list.sort((a,b)=>b.score-a.score||b.homeRuns-a.homeRuns);
+localStorage.setItem('boxwoodRanking',JSON.stringify(list.slice(0,10)));
+}
+
+function escapeHTML(s){
+return String(s).replace(/[&<>"']/g,c=>({
+'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+})[c]);
+}
+
+function renderRanking(){
+const list=getRanking();
+const area=$('rankList');
+if(!list.length){
+area.innerHTML='<p>아직 기록이 없어요! 첫 번째 명예의 전당 주인공이 되어보세요!</p>';
+return;
+}
+area.innerHTML=list.map((v,i)=>`
+<div class="rank-row">
+<span class="rank-num">${i+1}위</span>
+<span class="rank-name">${escapeHTML(v.name)}</span>
+<span class="rank-score">${v.score}점</span>
+<span class="small">홈런 ${v.homeRuns}</span>
+</div>`).join('');
+}
+
+function hud(){
+$('sc').textContent='점수 '+runs+' · 홈런 '+hrs;
+$('ot').textContent='아웃 '+'●'.repeat(outs)+'○'.repeat(3-outs)+' · 스트라이크 '+'●'.repeat(st)+'○'.repeat(2-st);
+}
+
+function begin(){
+outs=0;runs=0;hrs=0;st=0;bs=[0,0,0];
+on=true;fly=null;msg=null;p=null;
+$('ov').hidden=true;
+next();
+}
+
+function next(){
+if(outs>=3)return end();
+p={ty:TY[Math.floor(Math.random()*TY.length)],s:now()+800};
+hud();
+}
+
+function adv(n){
+let r=0;const nb=[0,0,0];
+for(let i=2;i>=0;i--)if(bs[i]){
+const q=i+1+n;
+if(q>=4)r++;else nb[q-1]=1;
+}
+if(n>=4)r++;else nb[n-1]=1;
+bs=nb;runs+=r;
+return r;
+}
+
+function strike(){
+st++;
+if(st>=3){outs++;st=0;return '삼진 아웃!'}
+return null;
+}
+
+function swing(){
+if(!on||!p||p.sw||p.res)return;
+p.sw=true;p.res=true;bat=now();
+
+const d=now()-(p.s+p.ty.d);
+const a=Math.abs(d);
+let r,c='#fff',vx=(Math.random()-.5)*3,vy=-2.6,k;
+
+// 홈런 확률 대폭 감소
+if(a<=18){
+k=adv(4);hrs++;st=0;
+r='홈런! (+'+k+'점)';
+c='#ffd23f';vy=-6.5;
+}
+else if(a<=65){
+k=adv(2);st=0;
+r='2루타'+(k?' (+'+k+'점)':'');
+c='#9be564';vy=-4.2;
+}
+else if(a<=115){
+const q=Math.random();
+if(q<.35){
+k=adv(1);st=0;
+r='안타'+(k?' (+'+k+'점)':'');
+}
+else if(q<.75){
+outs++;st=0;r='땅볼 아웃';c='#ccc';vy=-1.8;
+}
+else{
+outs++;st=0;r='뜬공 아웃';c='#ccc';vy=-3.6;
+}
+}
+else if(a<=200){
+if(st<2)st++;
+r=d<0?'3루 쪽 파울':'1루 쪽 파울';
+c='#ffb4a2';vx=d<0?-4:4;vy=-1.6;
+}
+else{
+r=strike()||'헛스윙';
+c='#ccc';vy=0;
+}
+
+msg={r,c,t:now()};
+if(vy)fly={x:180,y:ZY,vx,vy,t:now()};
+hud();
+
+setTimeout(()=>{
+p=null;
+if(outs>=3){end();return;}
+setTimeout(next,500);
+},1200);
+}
+
+// 게임 종료
+function end(){
+if(!on)return;
+on=false;
+
+const rk=runs>=6?'전설의 타자':
+runs>=4?'클린업 타자':
+runs>=2?'주전 타자':'신인 타자';
+
+$('ov').innerHTML=`
+<h2>🏆 ${runs}점 · ${rk}</h2>
+<p>홈런 ${hrs}개로 ${runs}점을 냈어요!<br>회양목을 지켜냈습니다! 🌳</p>
+<p>명예의 전당에 기록을 남겨보세요!</p>
+<input id="playerName" maxlength="12" placeholder="닉네임 입력">
+<button class="btn" id="saveRecord">🏆 기록 등록</button>
+<button class="btn" id="re">다시 도전</button>
+`;
+$('ov').hidden=false;
+
+$('saveRecord').onclick=()=>{
+const name=$('playerName').value.trim()||'익명의 타자';
+saveRanking(name,runs,hrs);
+
+$('ov').innerHTML=`
+<h2>🏆 기록 등록 완료!</h2>
+<p>${escapeHTML(name)} 선수의 기록이 명예의 전당에 등록됐어요!</p>
+<p>점수 ${runs}점 · 홈런 ${hrs}개</p>
+<button class="btn" id="showRank">랭킹 확인하기</button>
+<button class="btn" id="re">다시 도전</button>
+`;
+
+$('showRank').onclick=()=>{
+document.querySelector('[data-tab="rank"]').click();
+$('ov').hidden=true;
+};
+$('re').onclick=begin;
+};
+
+$('re').onclick=begin;
+}
+
+function txt(s,y,c,sz){
+x.font=sz+'px Jua,sans-serif';
+x.textAlign='center';x.lineWidth=5;
+x.strokeStyle='rgba(0,0,0,.6)';
+x.strokeText(s,W/2,y);
+x.fillStyle=c;x.fillText(s,W/2,y);
+}
+
+function dia(){
+const cx=302,cy=72,r=30;
+const P=[[cx,cy+r],[cx+r,cy],[cx,cy-r],[cx-r,cy]];
+x.fillStyle='rgba(0,0,0,.35)';
+x.fillRect(cx-48,cy-46,96,96);
+x.strokeStyle='#fff';x.lineWidth=2;
+x.beginPath();
+P.forEach((q,i)=>i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1]));
+x.closePath();x.stroke();
+
+for(let i=0;i<3;i++){
+const q=P[i+1];
+x.fillStyle=bs[i]?'#ffd23f':'rgba(255,255,255,.55)';
+x.fillRect(q[0]-7,q[1]-7,14,14);
+}
+x.fillStyle='#fff';
+x.fillRect(cx-6,cy+r-6,12,12);
+}
+
+function frame(){
+const t=now();
+x.clearRect(0,0,W,480);
+
+const g=x.createLinearGradient(0,0,0,480);
+g.addColorStop(0,'#3c8f52');
+g.addColorStop(1,'#2a6b3d');
+x.fillStyle=g;x.fillRect(0,0,W,480);
+
+x.strokeStyle='#ffd23f';x.lineWidth=3;
+x.setLineDash([8,6]);
+x.strokeRect(120,ZY-34,120,68);
+x.setLineDash([]);
+
+x.fillStyle='#fff';x.beginPath();
+x.moveTo(180,ZY+56);
+x.lineTo(160,ZY+46);
+x.lineTo(160,ZY+36);
+x.lineTo(200,ZY+36);
+x.lineTo(200,ZY+46);
+x.closePath();x.fill();
+
+if(bs)dia();
+
+if(p&&!p.res){
+const T=p.ty,pr=(t-p.s)/T.d;
+if(pr>=0){
+let f=pr;
+if(T.fk)f=pr<.65?pr*.6:.39+(pr-.65)/.35*.61;
+const y=40+f*(ZY-40);
+let px=180;
+if(T.w)px+=Math.sin(pr*Math.PI*T.f)*T.w*(1-pr);
+if(T.kn)px+=(Math.sin(pr*13)*40+Math.sin(pr*5)*30)*(1-pr);
+x.font='38px serif';x.textAlign='center';
+x.fillText('🦋',px,y);
+
+if(pr>1.35){
+p.res=true;
+const r=strike()||'스트라이크!';
+msg={r,c:'#ccc',t};
+hud();
+setTimeout(()=>{
+p=null;
+if(outs>=3)end();else next();
+},900);
+}
+}else{
+txt(T.n,90,'#fff',26);
+}
+}
+
+if(fly){
+const a=(t-fly.t)/1300;
+if(a<1){
+x.font=Math.max(10,30*(1-a*.7))+'px serif';
+x.textAlign='center';
+x.fillText('⚾',fly.x+fly.vx*a*120,fly.y+fly.vy*a*120);
+}else fly=null;
+}
+
+const ba=t-bat;
+x.save();
+x.translate(150,ZY+50);
+x.rotate(ba<130?(-1.2+ba/130*2.4):-1.2);
+x.font='46px serif';x.textAlign='center';
+x.fillText('🏏',0,0);
+x.restore();
+
+if(msg&&t-msg.t<1200)txt(msg.r,250,msg.c,32);
+
+requestAnimationFrame(frame);
+}
+
+cv.addEventListener('pointerdown',e=>{
+e.preventDefault();swing();
+});
+
+addEventListener('keydown',e=>{
+if(e.code==='Space'){
+e.preventDefault();swing();
+}
+});
+
+outs=0;runs=0;hrs=0;st=0;bs=[0,0,0];
+hud();
+$('go').onclick=begin;
+frame();
+</script>
+</body>
+</html>
